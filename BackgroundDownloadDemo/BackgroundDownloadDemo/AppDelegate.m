@@ -16,9 +16,11 @@ typedef void(^CompletionHandlerType)();
 @interface AppDelegate () <NSURLSessionDownloadDelegate>
 
 @property (strong, nonatomic) NSMutableDictionary *completionHandlerDictionary;
-@property (strong, nonatomic) NSURLSessionDownloadTask *downloadTask;
+//@property (strong, nonatomic) NSURLSessionDownloadTask *downloadTask;
 @property (strong, nonatomic) NSURLSession *backgroundSession;
-@property (strong, nonatomic) NSData *resumeData;
+//@property (strong, nonatomic) NSData *resumeData;
+@property (strong, nonatomic) NSMutableSet * tasks;
+@property (strong, nonatomic) NSMutableDictionary * tasksInfo;
 
 @property (strong, nonatomic) UILocalNotification *localNotification;
 
@@ -30,6 +32,8 @@ typedef void(^CompletionHandlerType)();
     // Override point for customization after application launch.
     self.completionHandlerDictionary = @{}.mutableCopy;
     self.backgroundSession = [self backgroundURLSession];
+    self.tasks = [[NSMutableSet alloc] init];
+    self.tasksInfo = [[NSMutableDictionary alloc] init];
     
     [self initLocalNotification];
     // ios8后，需要添加这个注册，才能得到授权
@@ -143,33 +147,68 @@ typedef void(^CompletionHandlerType)();
 - (void)beginDownloadWithUrl:(NSString *)downloadURLString {
     NSURL *downloadURL = [NSURL URLWithString:downloadURLString];
     NSURLRequest *request = [NSURLRequest requestWithURL:downloadURL];
-    //cancel last download task
-    [self.downloadTask cancelByProducingResumeData:^(NSData * resumeData) {
-
-    }];
+    NSURLSessionDownloadTask  * task = [self.backgroundSession downloadTaskWithRequest:request];
+    [self.tasks addObject:task];
+    [task resume];
     
-    self.downloadTask = [self.backgroundSession downloadTaskWithRequest:request];
-    [self.downloadTask resume];
 }
 
-- (void)pauseDownload {
+- (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop {
     __weak __typeof(self) wSelf = self;
-    [self.downloadTask cancelByProducingResumeData:^(NSData * resumeData) {
-        __strong __typeof(wSelf) sSelf = wSelf;
-        sSelf.resumeData = resumeData;
-    }];
+    
+    NSEnumerator * en = [self.tasks objectEnumerator];
+    NSURLSessionDownloadTask * task;
+    while (task = [en nextObject])
+    {
+        if(taskTopause && taskTopause != task)
+            continue;
+        [task cancelByProducingResumeData:^(NSData * resumeData) {
+            __strong __typeof(wSelf) sSelf = wSelf;
+            if(isStop == NO)
+            {
+                if(resumeData)
+                    [sSelf.tasksInfo setObject:resumeData forKey:task];
+            }
+        }];
+        
+        if(taskTopause)
+        {
+            [self.tasks removeObject:task];
+            break;
+        }
+    }
+    
+    if(taskTopause == nil)
+       [self.tasks removeAllObjects];
+
 }
 
-- (void)continueDownload {
-    if (self.resumeData) {
-        if (IS_IOS10ORLATER) {
-            self.downloadTask = [self.backgroundSession downloadTaskWithCorrectResumeData:self.resumeData];
-        } else {
-            self.downloadTask = [self.backgroundSession downloadTaskWithResumeData:self.resumeData];
+- (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue {
+    
+    for(NSURLSessionDownloadTask  * key in self.tasksInfo)
+    {
+        if(taskTocontinue && taskTocontinue != key)
+            continue;
+        NSData * data = self.tasksInfo[key];
+        if (data) {
+            NSURLSessionDownloadTask  * newTask;
+            if (IS_IOS10ORLATER) {
+                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
+            } else {
+                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
+            }
+            [newTask resume];
+            [self.tasks addObject:newTask];
+            if(taskTocontinue)
+            {
+                [self.tasksInfo removeObjectForKey:taskTocontinue];
+                return newTask;
+            }
         }
-        [self.downloadTask resume];
-        self.resumeData = nil;
     }
+    if(taskTocontinue == nil)
+        [self.tasksInfo removeAllObjects];
+    return nil;
 }
 
 - (BOOL)isValideResumeData:(NSData *)resumeData
@@ -239,11 +278,23 @@ didCompleteWithError:(NSError *)error {
         if ([error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData]) {
             NSData *resumeData = [error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData];
             //通过之前保存的resumeData，获取断点的NSURLSessionTask，调用resume恢复下载
-            self.resumeData = resumeData;
+            //self.resumeData = resumeData;
+            if(resumeData)
+                [self.tasksInfo setObject:resumeData forKey:task];
+        }
+        else
+        {
+            [self.tasks removeObject:task];
+            [self.tasksInfo removeObjectForKey:task];
         }
     } else {
         [self sendLocalNotification];
         [self postDownlaodProgressNotification:@"1"];
+        [self.tasks removeObject:task];
+        [self.tasksInfo removeObjectForKey:task];
+        
+        //
+        //[self beginDownloadWithUrl:@"http://d1.music.126.net/dmusic/NeteaseMusic_2.0.0_730_web.dmg"];
     }
 }
 

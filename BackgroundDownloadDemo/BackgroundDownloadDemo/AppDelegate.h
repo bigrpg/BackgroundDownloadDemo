@@ -15,8 +15,8 @@
 @property (strong, nonatomic) UIWindow *window;
 
 - (void)beginDownloadWithUrl:(NSString *)downloadURLString;
-- (void)pauseDownload;
-- (void)continueDownload;
+- (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop;
+- (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue;
 
 @end
 

@@ -44,17 +44,26 @@
 #pragma mark Method
 - (IBAction)download:(id)sender {
     AppDelegate *delegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    [delegate beginDownloadWithUrl:@"http://sw.bos.baidu.com/sw-search-sp/software/797b4439e2551/QQ_mac_5.0.2.dmg"];
+    //[delegate beginDownloadWithUrl:@"https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.8.0-amd64-netinst.iso"];
+    [delegate beginDownloadWithUrl:@"http://dldir1.qq.com/qqfile/QQforMac/QQ_V6.5.3.dmg"];
+    //[delegate beginDownloadWithUrl:@"http://d1.music.126.net/dmusic/NeteaseMusic_2.0.0_730_web.dmg"];
+}
+
+- (IBAction)download2:(id)sender {
+    AppDelegate *delegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
+    //[delegate beginDownloadWithUrl:@"https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.8.0-amd64-netinst.iso"];
+    //[delegate beginDownloadWithUrl:@"http://dldir1.qq.com/qqfile/QQforMac/QQ_V6.5.3.dmg"];
+    [delegate beginDownloadWithUrl:@"http://d1.music.126.net/dmusic/NeteaseMusic_2.0.0_730_web.dmg"];
 }
 
 - (IBAction)pauseDownlaod:(id)sender {
     AppDelegate *delegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    [delegate pauseDownload];
+    [delegate pauseDownload:nil isStop:NO];
 }
 
 - (IBAction)continueDownlaod:(id)sender {
     AppDelegate *delegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    [delegate continueDownload];
+    [delegate continueDownload:nil];
 }
 
 @end
