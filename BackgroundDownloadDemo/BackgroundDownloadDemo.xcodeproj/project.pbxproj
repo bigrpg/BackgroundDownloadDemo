@@ -13,6 +13,7 @@
 		57C454181D8442EC00B6D2B5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 57C454161D8442EC00B6D2B5 /* Main.storyboard */; };
 		57C4541A1D8442EC00B6D2B5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57C454191D8442EC00B6D2B5 /* Assets.xcassets */; };
 		57C4541D1D8442EC00B6D2B5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 57C4541B1D8442EC00B6D2B5 /* LaunchScreen.storyboard */; };
+		783880B5225C917400FF0653 /* BackgroundDownloader.mm in Sources */ = {isa = PBXBuildFile; fileRef = 783880B4225C917400FF0653 /* BackgroundDownloader.mm */; };
 		84918AD21DAE0D5300E3288C /* NSURLSession+CorrectedResumeData.m in Sources */ = {isa = PBXBuildFile; fileRef = 84918AD11DAE0D5300E3288C /* NSURLSession+CorrectedResumeData.m */; };
 /* End PBXBuildFile section */
 
@@ -27,6 +28,8 @@
 		57C454191D8442EC00B6D2B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		57C4541C1D8442EC00B6D2B5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		57C4541E1D8442EC00B6D2B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		783880B1225C912700FF0653 /* BackgroundDownloader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BackgroundDownloader.h; sourceTree = "<group>"; };
+		783880B4225C917400FF0653 /* BackgroundDownloader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BackgroundDownloader.mm; sourceTree = "<group>"; };
 		84918AD01DAE0D5300E3288C /* NSURLSession+CorrectedResumeData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSURLSession+CorrectedResumeData.h"; sourceTree = "<group>"; };
 		84918AD11DAE0D5300E3288C /* NSURLSession+CorrectedResumeData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSURLSession+CorrectedResumeData.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -72,6 +75,8 @@
 				57C4541B1D8442EC00B6D2B5 /* LaunchScreen.storyboard */,
 				57C4541E1D8442EC00B6D2B5 /* Info.plist */,
 				57C4540D1D8442EC00B6D2B5 /* Supporting Files */,
+				783880B1225C912700FF0653 /* BackgroundDownloader.h */,
+				783880B4225C917400FF0653 /* BackgroundDownloader.mm */,
 			);
 			path = BackgroundDownloadDemo;
 			sourceTree = "<group>";
@@ -160,6 +165,7 @@
 				57C454151D8442EC00B6D2B5 /* ViewController.m in Sources */,
 				57C454121D8442EC00B6D2B5 /* AppDelegate.m in Sources */,
 				84918AD21DAE0D5300E3288C /* NSURLSession+CorrectedResumeData.m in Sources */,
+				783880B5225C917400FF0653 /* BackgroundDownloader.mm in Sources */,
 				57C4540F1D8442EC00B6D2B5 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
