@@ -9,20 +9,27 @@
 #ifndef BackgroundDownloader_h
 #define BackgroundDownloader_h
 
+typedef void(^CompletionHandlerType)();
 
-class BgDownloadCallback
+class AzureBackgroundDownloadCallback
 {
 public:
-    virtual void onOneFileDownloadFinish(const char* tempFilename) = 0;
-    virtual void onDataReceive(int64_t  totalBytesWritten, int64_t totalBytesExpectedToWrite) = 0;
+    virtual void onOneFileDownloadFinish(unsigned long taskIdentifier,NSString* tempFilename) = 0;
+    virtual void onDataReceive(unsigned long taskIdentifier,int64_t  totalBytesWritten, int64_t totalBytesExpectedToWrite) = 0;
     virtual void onTaskFailed(unsigned long taskIdentifier) = 0;
     virtual void onTaskSuccess(unsigned long taskIdentifier) = 0;
 };
 
 
-@interface BgSessionDownloadDelegate : NSObject<NSURLSessionDownloadDelegate>
+@interface AzureBackgroundDownloader : NSObject<NSURLSessionDownloadDelegate>
 
-- (BgSessionDownloadDelegate *) init: (NSString *) identifier  callback:(BgDownloadCallback *) callback;
+- (AzureBackgroundDownloader *) init: (NSString *) identifier  callback:(AzureBackgroundDownloadCallback *) callback;
+- (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier;
+- (NSUInteger)beginDownloadWithUrl:(NSString *)downloadURLString;
+- (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop;
+- (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue;
+- (NSURLSession *)backgroundURLSession : (NSString *) identifier;
+
 @end
 
 #endif /* BackgroundDownloader_h */

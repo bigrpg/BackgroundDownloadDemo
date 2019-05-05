@@ -1,6 +1,5 @@
 //
 //  BackgroundDownloader.m
-//  BackgroundDownloadDemo
 //
 //  Created by zl on 2019/4/9.
 //  Copyright © 2019 hkhust. All rights reserved.
@@ -11,9 +10,9 @@
 
 typedef void(^CompletionHandlerType)();
 
-@interface BgSessionDownloadDelegate()
+@interface AzureBackgroundDownloader()
 {
-    BgDownloadCallback * callback;
+    AzureBackgroundDownloadCallback * callback;
 }
 
 @property (strong, nonatomic) NSMutableDictionary *completionHandlerDictionary;
@@ -25,9 +24,9 @@ typedef void(^CompletionHandlerType)();
 @end
 
 
-@implementation BgSessionDownloadDelegate
+@implementation AzureBackgroundDownloader
 
-- (BgSessionDownloadDelegate *) init : (NSString *) identifier  callback:(BgDownloadCallback *) callback_
+- (AzureBackgroundDownloader *) init : (NSString *) identifier  callback:(AzureBackgroundDownloadCallback *) callback_
 {
     self.identifier = identifier;
     self.completionHandlerDictionary = @{}.mutableCopy;
@@ -148,7 +147,7 @@ didFinishDownloadingToURL:(NSURL *)location {
     NSLog(@"downloadTask:%lu didFinishDownloadingToURL:%@", (unsigned long)downloadTask.taskIdentifier, location);
     NSString *locationString = [location path];
     if(callback)
-        callback->onOneFileDownloadFinish( [locationString UTF8String] );
+        callback->onOneFileDownloadFinish(downloadTask.taskIdentifier, locationString );
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -166,7 +165,7 @@ expectedTotalBytes:(int64_t)expectedTotalBytes {
 totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
     
     if(callback)
-        callback->onDataReceive(totalBytesWritten,totalBytesExpectedToWrite);
+        callback->onDataReceive(downloadTask.taskIdentifier, totalBytesWritten,totalBytesExpectedToWrite);
     
 }
 

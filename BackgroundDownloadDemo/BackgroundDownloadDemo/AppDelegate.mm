@@ -8,10 +8,55 @@
 
 #import "AppDelegate.h"
 #import "NSURLSession+CorrectedResumeData.h"
+#import "BackgroundDownloader.h"
 
 #define IS_IOS10ORLATER ([[[UIDevice currentDevice] systemVersion] floatValue] >= 10)
 
-typedef void(^CompletionHandlerType)();
+
+class AzureBackgroundDownloadCallbackImplement : public AzureBackgroundDownloadCallback
+{
+    UILocalNotification *localNotification;
+public:
+    AzureBackgroundDownloadCallbackImplement()
+    {
+        localNotification = [[UILocalNotification alloc] init];
+        localNotification.fireDate = [[NSDate date] dateByAddingTimeInterval:5];
+        localNotification.alertAction = nil;
+        localNotification.soundName = UILocalNotificationDefaultSoundName;
+        localNotification.alertBody = @"下载完成了！";
+        localNotification.applicationIconBadgeNumber = 1;
+        localNotification.repeatInterval = 0;
+    }
+    
+    void postDownlaodProgressNotification(NSString * strProgress)
+    {
+        NSDictionary *userInfo = @{@"progress":strProgress};
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:kDownloadProgressNotification object:nil userInfo:userInfo];
+        });
+    }
+    virtual void onOneFileDownloadFinish(unsigned long taskIdentifier,NSString * tempFilename)
+    {
+        NSString *finalLocation = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory , NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:[NSString stringWithFormat:@"%lufile",taskIdentifier]];
+        NSError *error;
+        [[NSFileManager defaultManager] moveItemAtPath:tempFilename toPath:finalLocation error:&error];
+    }
+    virtual void onDataReceive(unsigned long taskIdentifier,int64_t  totalBytesWritten, int64_t totalBytesExpectedToWrite)
+    {
+        NSLog(@"downloadTask:%lu percent:%.2f%%",taskIdentifier,(CGFloat)totalBytesWritten / totalBytesExpectedToWrite * 100);
+        NSString *strProgress = [NSString stringWithFormat:@"%.2f",(CGFloat)totalBytesWritten / totalBytesExpectedToWrite];
+        postDownlaodProgressNotification(strProgress);
+    }
+    virtual void onTaskFailed(unsigned long taskIdentifier)
+    {
+        
+    }
+    virtual void onTaskSuccess(unsigned long taskIdentifier)
+    {
+        [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+        postDownlaodProgressNotification(@"1");
+    }
+};
 
 @interface AppDelegate () <NSURLSessionDownloadDelegate>
 
@@ -23,6 +68,7 @@ typedef void(^CompletionHandlerType)();
 @property (strong, nonatomic) NSMutableDictionary * tasksInfo;
 
 @property (strong, nonatomic) UILocalNotification *localNotification;
+@property (strong, nonatomic) AzureBackgroundDownloader * bgMgr;
 
 @end
 
@@ -34,6 +80,7 @@ typedef void(^CompletionHandlerType)();
     self.backgroundSession = [self backgroundURLSession];
     self.tasks = [[NSMutableSet alloc] init];
     self.tasksInfo = [[NSMutableDictionary alloc] init];
+    self.bgMgr = [[AzureBackgroundDownloader alloc] init:@"com.yourcompany.appId.BackgroundSession"  callback: new AzureBackgroundDownloadCallbackImplement() ];
     
     [self initLocalNotification];
     // ios8后，需要添加这个注册，才能得到授权
@@ -57,15 +104,21 @@ typedef void(^CompletionHandlerType)();
 }
 
 - (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler {
+    
+    //
+    NSURLSession *backgroundSession = [self.bgMgr backgroundURLSession:@"com.yourcompany.appId.BackgroundSession"];
+    [self.bgMgr addCompletionHandler:completionHandler forSession:identifier];
+    
+    //
     // 你必须重新建立一个后台 seesion 的参照
     // 否则 NSURLSessionDownloadDelegate 和 NSURLSessionDelegate 方法会因为
     // 没有 对 session 的 delegate 设定而不会被调用。参见上面的 backgroundURLSession
-    NSURLSession *backgroundSession = [self backgroundURLSession];
-    
-    NSLog(@"Rejoining session with identifier %@ %@", identifier, backgroundSession);
-    
-    // 保存 completion handler 以在处理 session 事件后更新 UI
-    [self addCompletionHandler:completionHandler forSession:identifier];
+//    NSURLSession *backgroundSession = [self backgroundURLSession];
+//
+//    NSLog(@"Rejoining session with identifier %@ %@", identifier, backgroundSession);
+//
+//    // 保存 completion handler 以在处理 session 事件后更新 UI
+//    [self addCompletionHandler:completionHandler forSession:identifier];
 }
 
 #pragma mark Save completionHandler
@@ -145,70 +198,77 @@ typedef void(^CompletionHandlerType)();
 
 #pragma mark - Public Mehtod
 - (void)beginDownloadWithUrl:(NSString *)downloadURLString {
-    NSURL *downloadURL = [NSURL URLWithString:downloadURLString];
-    NSURLRequest *request = [NSURLRequest requestWithURL:downloadURL];
-    NSURLSessionDownloadTask  * task = [self.backgroundSession downloadTaskWithRequest:request];
-    [self.tasks addObject:task];
-    [task resume];
+    [self.bgMgr beginDownloadWithUrl:downloadURLString];
+    
+//    NSURL *downloadURL = [NSURL URLWithString:downloadURLString];
+//    NSURLRequest *request = [NSURLRequest requestWithURL:downloadURL];
+//    NSURLSessionDownloadTask  * task = [self.backgroundSession downloadTaskWithRequest:request];
+//    [self.tasks addObject:task];
+//    [task resume];
     
 }
 
 - (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop {
-    __weak __typeof(self) wSelf = self;
     
-    NSEnumerator * en = [self.tasks objectEnumerator];
-    NSURLSessionDownloadTask * task;
-    while (task = [en nextObject])
-    {
-        if(taskTopause && taskTopause != task)
-            continue;
-        [task cancelByProducingResumeData:^(NSData * resumeData) {
-            __strong __typeof(wSelf) sSelf = wSelf;
-            if(isStop == NO)
-            {
-                if(resumeData)
-                    [sSelf.tasksInfo setObject:resumeData forKey:task];
-            }
-        }];
-        
-        if(taskTopause)
-        {
-            [self.tasks removeObject:task];
-            break;
-        }
-    }
+    [self.bgMgr pauseDownload:taskTopause isStop:isStop];
     
-    if(taskTopause == nil)
-       [self.tasks removeAllObjects];
+//    __weak __typeof(self) wSelf = self;
+//
+//    NSEnumerator * en = [self.tasks objectEnumerator];
+//    NSURLSessionDownloadTask * task;
+//    while (task = [en nextObject])
+//    {
+//        if(taskTopause && taskTopause != task)
+//            continue;
+//        [task cancelByProducingResumeData:^(NSData * resumeData) {
+//            __strong __typeof(wSelf) sSelf = wSelf;
+//            if(isStop == NO)
+//            {
+//                if(resumeData)
+//                    [sSelf.tasksInfo setObject:resumeData forKey:task];
+//            }
+//        }];
+//
+//        if(taskTopause)
+//        {
+//            [self.tasks removeObject:task];
+//            break;
+//        }
+//    }
+//
+//    if(taskTopause == nil)
+//       [self.tasks removeAllObjects];
 
 }
 
 - (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue {
     
-    for(NSURLSessionDownloadTask  * key in self.tasksInfo)
-    {
-        if(taskTocontinue && taskTocontinue != key)
-            continue;
-        NSData * data = self.tasksInfo[key];
-        if (data) {
-            NSURLSessionDownloadTask  * newTask;
-            if (IS_IOS10ORLATER) {
-                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
-            } else {
-                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
-            }
-            [newTask resume];
-            [self.tasks addObject:newTask];
-            if(taskTocontinue)
-            {
-                [self.tasksInfo removeObjectForKey:taskTocontinue];
-                return newTask;
-            }
-        }
-    }
-    if(taskTocontinue == nil)
-        [self.tasksInfo removeAllObjects];
-    return nil;
+    return [self.bgMgr continueDownload:taskTocontinue];
+    
+//    for(NSURLSessionDownloadTask  * key in self.tasksInfo)
+//    {
+//        if(taskTocontinue && taskTocontinue != key)
+//            continue;
+//        NSData * data = self.tasksInfo[key];
+//        if (data) {
+//            NSURLSessionDownloadTask  * newTask;
+//            if (IS_IOS10ORLATER) {
+//                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
+//            } else {
+//                newTask = [self.backgroundSession downloadTaskWithResumeData:data];
+//            }
+//            [newTask resume];
+//            [self.tasks addObject:newTask];
+//            if(taskTocontinue)
+//            {
+//                [self.tasksInfo removeObjectForKey:taskTocontinue];
+//                return newTask;
+//            }
+//        }
+//    }
+//    if(taskTocontinue == nil)
+//        [self.tasksInfo removeAllObjects];
+//    return nil;
 }
 
 - (BOOL)isValideResumeData:(NSData *)resumeData
