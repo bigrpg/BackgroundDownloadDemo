@@ -106,7 +106,7 @@ public:
 - (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler {
     
     //
-    NSURLSession *backgroundSession = [self.bgMgr backgroundURLSession:@"com.yourcompany.appId.BackgroundSession"];
+    //NSURLSession *backgroundSession = [self.bgMgr backgroundURLSession:@"com.yourcompany.appId.BackgroundSession"];
     [self.bgMgr addCompletionHandler:completionHandler forSession:identifier];
     
     //
@@ -210,7 +210,14 @@ public:
 
 - (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop {
     
-    [self.bgMgr pauseDownload:taskTopause isStop:isStop];
+    if(taskTopause != nil)
+    {
+        [self.bgMgr pauseOneDownload:taskTopause.taskIdentifier isStop:isStop];
+    }
+    else
+    {
+        [self.bgMgr pauseAllDownload:isStop];
+    }
     
 //    __weak __typeof(self) wSelf = self;
 //
@@ -243,7 +250,16 @@ public:
 
 - (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue {
     
-    return [self.bgMgr continueDownload:taskTocontinue];
+    if(taskTocontinue != nil)
+    {
+        NSUInteger newTaskId;
+        BOOL ret =  [self.bgMgr continueOneDownload:taskTocontinue.taskIdentifier newTask:newTaskId];
+    }
+    else{
+        [self.bgMgr continueAllDownload];
+    }
+    
+    return nil;
     
 //    for(NSURLSessionDownloadTask  * key in self.tasksInfo)
 //    {

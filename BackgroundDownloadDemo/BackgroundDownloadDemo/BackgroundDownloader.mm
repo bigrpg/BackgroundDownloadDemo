@@ -85,14 +85,15 @@ typedef void(^CompletionHandlerType)();
     return task.taskIdentifier;
 }
 
-- (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop {
+//Pause one task
+- (void)pauseOneDownload : (NSUInteger)  taskTopause  isStop:(BOOL) isStop {
     __weak __typeof(self) wSelf = self;
     
     NSEnumerator * en = [self.tasks objectEnumerator];
     NSURLSessionDownloadTask * task;
     while (task = [en nextObject])
     {
-        if(taskTopause && taskTopause != task)
+        if(taskTopause && taskTopause != task.taskIdentifier)
             continue;
         [task cancelByProducingResumeData:^(NSData * resumeData) {
             __strong __typeof(wSelf) sSelf = wSelf;
@@ -103,40 +104,71 @@ typedef void(^CompletionHandlerType)();
             }
         }];
         
-        if(taskTopause)
-        {
-            [self.tasks removeObject:task];
-            break;
-        }
+        [self.tasks removeObject:task];
+        break;
+        
+    }
+}
+
+//Pause all task
+- (void)pauseAllDownload : (BOOL) isStop {
+    __weak __typeof(self) wSelf = self;
+    
+    NSEnumerator * en = [self.tasks objectEnumerator];
+    NSURLSessionDownloadTask * task;
+    while (task = [en nextObject])
+    {
+        [task cancelByProducingResumeData:^(NSData * resumeData) {
+            __strong __typeof(wSelf) sSelf = wSelf;
+            if(isStop == NO)
+            {
+                if(resumeData)
+                    [sSelf.tasksInfo setObject:resumeData forKey:task];
+            }
+        }];
     }
     
-    if(taskTopause == nil)
-        [self.tasks removeAllObjects];
+    [self.tasks removeAllObjects];
     
 }
 
-- (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue {
+//Continue one task
+- (BOOL)continueOneDownload : (NSUInteger)  taskTocontinue  newTask:(NSUInteger&)  newTaskIdentifier {
     
-    for(NSURLSessionDownloadTask  * key in self.tasksInfo)
+    for(NSURLSessionDownloadTask  * task in self.tasksInfo)
     {
-        if(taskTocontinue && taskTocontinue != key)
+        if(taskTocontinue && taskTocontinue != task.taskIdentifier)
             continue;
-        NSData * data = self.tasksInfo[key];
+        NSData * data = self.tasksInfo[task];
         if (data) {
             NSURLSessionDownloadTask  * newTask;
             newTask = [self.backgroundSession downloadTaskWithResumeData:data];
             [newTask resume];
             [self.tasks addObject:newTask];
-            if(taskTocontinue)
-            {
-                [self.tasksInfo removeObjectForKey:taskTocontinue];
-                return newTask;
-            }
+
+            [self.tasksInfo removeObjectForKey:task];
+            newTaskIdentifier = newTask.taskIdentifier;
+            return YES;
+            
         }
     }
-    if(taskTocontinue == nil)
-        [self.tasksInfo removeAllObjects];
-    return nil;
+    return NO;
+}
+
+//Continue all task
+- (void)continueAllDownload {
+    
+    for(NSURLSessionDownloadTask  * task in self.tasksInfo)
+    {
+        NSData * data = self.tasksInfo[task];
+        if (data) {
+            NSURLSessionDownloadTask  * newTask;
+            newTask = [self.backgroundSession downloadTaskWithResumeData:data];
+            [newTask resume];
+            [self.tasks addObject:newTask];
+        }
+    }
+    [self.tasksInfo removeAllObjects];
 }
 
 #pragma mark - NSURLSessionDownloadDelegate

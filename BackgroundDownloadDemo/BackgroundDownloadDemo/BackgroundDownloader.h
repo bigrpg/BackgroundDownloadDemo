@@ -26,9 +26,10 @@ public:
 - (AzureBackgroundDownloader *) init: (NSString *) identifier  callback:(AzureBackgroundDownloadCallback *) callback;
 - (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier;
 - (NSUInteger)beginDownloadWithUrl:(NSString *)downloadURLString;
-- (void)pauseDownload : (NSURLSessionDownloadTask *)  taskTopause  isStop:(BOOL) isStop;
-- (NSURLSessionDownloadTask * )continueDownload : (NSURLSessionDownloadTask *)  taskTocontinue;
-- (NSURLSession *)backgroundURLSession : (NSString *) identifier;
+- (void)pauseOneDownload : (NSUInteger)  taskTopause  isStop:(BOOL) isStop;
+- (void)pauseAllDownload :(BOOL) isStop;
+- (BOOL)continueOneDownload : (NSUInteger)  taskTocontinue  newTask:(NSUInteger&)  newTaskIdentifier;
+- (void) continueAllDownload;
 
 @end
 
