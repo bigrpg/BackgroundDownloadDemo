@@ -60,12 +60,12 @@ public:
 
 @interface AppDelegate () <NSURLSessionDownloadDelegate>
 
-@property (strong, nonatomic) NSMutableDictionary *completionHandlerDictionary;
+//@property (strong, nonatomic) NSMutableDictionary *completionHandlerDictionary;
 //@property (strong, nonatomic) NSURLSessionDownloadTask *downloadTask;
-@property (strong, nonatomic) NSURLSession *backgroundSession;
+//@property (strong, nonatomic) NSURLSession *backgroundSession;
 //@property (strong, nonatomic) NSData *resumeData;
-@property (strong, nonatomic) NSMutableSet * tasks;
-@property (strong, nonatomic) NSMutableDictionary * tasksInfo;
+//@property (strong, nonatomic) NSMutableSet * tasks;
+//@property (strong, nonatomic) NSMutableDictionary * tasksInfo;
 
 @property (strong, nonatomic) UILocalNotification *localNotification;
 @property (strong, nonatomic) AzureBackgroundDownloader * bgMgr;
@@ -76,10 +76,10 @@ public:
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
-    self.completionHandlerDictionary = @{}.mutableCopy;
-    self.backgroundSession = [self backgroundURLSession];
-    self.tasks = [[NSMutableSet alloc] init];
-    self.tasksInfo = [[NSMutableDictionary alloc] init];
+    //self.completionHandlerDictionary = @{}.mutableCopy;
+    //self.backgroundSession = [self backgroundURLSession];
+    //self.tasks = [[NSMutableSet alloc] init];
+    //self.tasksInfo = [[NSMutableDictionary alloc] init];
     self.bgMgr = [[AzureBackgroundDownloader alloc] init:@"com.yourcompany.appId.BackgroundSession"  callback: new AzureBackgroundDownloadCallbackImplement() ];
     
     [self initLocalNotification];
@@ -121,25 +121,25 @@ public:
 //    [self addCompletionHandler:completionHandler forSession:identifier];
 }
 
-#pragma mark Save completionHandler
-- (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier {
-    if ([self.completionHandlerDictionary objectForKey:identifier]) {
-        NSLog(@"Error: Got multiple handlers for a single session identifier.  This should not happen.\n");
-    }
-    
-    [self.completionHandlerDictionary setObject:handler forKey:identifier];
-}
+//#pragma mark Save completionHandler
+//- (void)addCompletionHandler:(CompletionHandlerType)handler forSession:(NSString *)identifier {
+//    if ([self.completionHandlerDictionary objectForKey:identifier]) {
+//        NSLog(@"Error: Got multiple handlers for a single session identifier.  This should not happen.\n");
+//    }
+//
+//    [self.completionHandlerDictionary setObject:handler forKey:identifier];
+//}
 
-- (void)callCompletionHandlerForSession:(NSString *)identifier {
-    CompletionHandlerType handler = [self.completionHandlerDictionary objectForKey:identifier];
-    
-    if (handler) {
-        [self.completionHandlerDictionary removeObjectForKey: identifier];
-        NSLog(@"Calling completion handler for session %@", identifier);
-        
-        handler();
-    }
-}
+//- (void)callCompletionHandlerForSession:(NSString *)identifier {
+//    CompletionHandlerType handler = [self.completionHandlerDictionary objectForKey:identifier];
+//
+//    if (handler) {
+//        [self.completionHandlerDictionary removeObjectForKey: identifier];
+//        NSLog(@"Calling completion handler for session %@", identifier);
+//
+//        handler();
+//    }
+//}
 
 #pragma mark - Local Notification
 - (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification {
@@ -176,25 +176,25 @@ public:
 }
 
 
-#pragma mark - backgroundURLSession
-- (NSURLSession *)backgroundURLSession {
-    static NSURLSession *session = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        NSString *identifier = @"com.yourcompany.appId.BackgroundSession";
-        NSURLSessionConfiguration* sessionConfig = nil;
-#if (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
-        sessionConfig = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
-#else
-        sessionConfig = [NSURLSessionConfiguration backgroundSessionConfiguration:identifier];
-#endif
-        session = [NSURLSession sessionWithConfiguration:sessionConfig
-                                                delegate:self
-                                           delegateQueue:[NSOperationQueue mainQueue]];
-    });
-    
-    return session;
-}
+//#pragma mark - backgroundURLSession
+//- (NSURLSession *)backgroundURLSession {
+//    static NSURLSession *session = nil;
+//    static dispatch_once_t onceToken;
+//    dispatch_once(&onceToken, ^{
+//        NSString *identifier = @"com.yourcompany.appId.BackgroundSession";
+//        NSURLSessionConfiguration* sessionConfig = nil;
+//#if (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+//        sessionConfig = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
+//#else
+//        sessionConfig = [NSURLSessionConfiguration backgroundSessionConfiguration:identifier];
+//#endif
+//        session = [NSURLSession sessionWithConfiguration:sessionConfig
+//                                                delegate:self
+//                                           delegateQueue:[NSOperationQueue mainQueue]];
+//    });
+//
+//    return session;
+//}
 
 #pragma mark - Public Mehtod
 - (void)beginDownloadWithUrl:(NSString *)downloadURLString {
@@ -287,92 +287,92 @@ public:
 //    return nil;
 }
 
-- (BOOL)isValideResumeData:(NSData *)resumeData
-{
-    if (!resumeData || resumeData.length == 0) {
-        return NO;
-    }
-    return YES;
-}
+//- (BOOL)isValideResumeData:(NSData *)resumeData
+//{
+//    if (!resumeData || resumeData.length == 0) {
+//        return NO;
+//    }
+//    return YES;
+//}
 
-#pragma mark - NSURLSessionDownloadDelegate
-- (void)URLSession:(NSURLSession *)session
-      downloadTask:(NSURLSessionDownloadTask *)downloadTask
-didFinishDownloadingToURL:(NSURL *)location {
-    
-    NSLog(@"downloadTask:%lu didFinishDownloadingToURL:%@", (unsigned long)downloadTask.taskIdentifier, location);
-    NSString *locationString = [location path];
-    NSString *finalLocation = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory , NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:[NSString stringWithFormat:@"%lufile",(unsigned long)downloadTask.taskIdentifier]];
-    NSError *error;
-    [[NSFileManager defaultManager] moveItemAtPath:locationString toPath:finalLocation error:&error];
-    
-    // 用 NSFileManager 将文件复制到应用的存储中
-    // ...
-    
-    // 通知 UI 刷新
-}
-
-- (void)URLSession:(NSURLSession *)session
-      downloadTask:(NSURLSessionDownloadTask *)downloadTask
- didResumeAtOffset:(int64_t)fileOffset
-expectedTotalBytes:(int64_t)expectedTotalBytes {
-    
-    NSLog(@"fileOffset:%lld expectedTotalBytes:%lld",fileOffset,expectedTotalBytes);
-}
-
-- (void)URLSession:(NSURLSession *)session
-      downloadTask:(NSURLSessionDownloadTask *)downloadTask
-      didWriteData:(int64_t)bytesWritten
- totalBytesWritten:(int64_t)totalBytesWritten
-totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
-    
-    NSLog(@"downloadTask:%lu percent:%.2f%%",(unsigned long)downloadTask.taskIdentifier,(CGFloat)totalBytesWritten / totalBytesExpectedToWrite * 100);
-    NSString *strProgress = [NSString stringWithFormat:@"%.2f",(CGFloat)totalBytesWritten / totalBytesExpectedToWrite];
-    [self postDownlaodProgressNotification:strProgress];
-}
-
-- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
-    NSLog(@"Background URL session %@ finished events.\n", session);
-    
-    if (session.configuration.identifier) {
-        // 调用在 -application:handleEventsForBackgroundURLSession: 中保存的 handler
-        [self callCompletionHandlerForSession:session.configuration.identifier];
-    }
-}
+//#pragma mark - NSURLSessionDownloadDelegate
+//- (void)URLSession:(NSURLSession *)session
+//      downloadTask:(NSURLSessionDownloadTask *)downloadTask
+//didFinishDownloadingToURL:(NSURL *)location {
+//
+//    NSLog(@"downloadTask:%lu didFinishDownloadingToURL:%@", (unsigned long)downloadTask.taskIdentifier, location);
+//    NSString *locationString = [location path];
+//    NSString *finalLocation = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory , NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:[NSString stringWithFormat:@"%lufile",(unsigned long)downloadTask.taskIdentifier]];
+//    NSError *error;
+//    [[NSFileManager defaultManager] moveItemAtPath:locationString toPath:finalLocation error:&error];
+//
+//    // 用 NSFileManager 将文件复制到应用的存储中
+//    // ...
+//
+//    // 通知 UI 刷新
+//}
+//
+//- (void)URLSession:(NSURLSession *)session
+//      downloadTask:(NSURLSessionDownloadTask *)downloadTask
+// didResumeAtOffset:(int64_t)fileOffset
+//expectedTotalBytes:(int64_t)expectedTotalBytes {
+//
+//    NSLog(@"fileOffset:%lld expectedTotalBytes:%lld",fileOffset,expectedTotalBytes);
+//}
+//
+//- (void)URLSession:(NSURLSession *)session
+//      downloadTask:(NSURLSessionDownloadTask *)downloadTask
+//      didWriteData:(int64_t)bytesWritten
+// totalBytesWritten:(int64_t)totalBytesWritten
+//totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+//
+//    NSLog(@"downloadTask:%lu percent:%.2f%%",(unsigned long)downloadTask.taskIdentifier,(CGFloat)totalBytesWritten / totalBytesExpectedToWrite * 100);
+//    NSString *strProgress = [NSString stringWithFormat:@"%.2f",(CGFloat)totalBytesWritten / totalBytesExpectedToWrite];
+//    [self postDownlaodProgressNotification:strProgress];
+//}
+//
+//- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
+//    NSLog(@"Background URL session %@ finished events.\n", session);
+//
+//    if (session.configuration.identifier) {
+//        // 调用在 -application:handleEventsForBackgroundURLSession: 中保存的 handler
+//        [self callCompletionHandlerForSession:session.configuration.identifier];
+//    }
+//}
 
 /*
  * 该方法下载成功和失败都会回调，只是失败的是error是有值的，
  * 在下载失败时，error的userinfo属性可以通过NSURLSessionDownloadTaskResumeData
  * 这个key来取到resumeData(和上面的resumeData是一样的)，再通过resumeData恢复下载
  */
-- (void)URLSession:(NSURLSession *)session
-              task:(NSURLSessionTask *)task
-didCompleteWithError:(NSError *)error {
-    
-    if (error) {
-        // check if resume data are available
-        if ([error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData]) {
-            NSData *resumeData = [error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData];
-            //通过之前保存的resumeData，获取断点的NSURLSessionTask，调用resume恢复下载
-            //self.resumeData = resumeData;
-            if(resumeData)
-                [self.tasksInfo setObject:resumeData forKey:task];
-        }
-        else
-        {
-            [self.tasks removeObject:task];
-            [self.tasksInfo removeObjectForKey:task];
-        }
-    } else {
-        [self sendLocalNotification];
-        [self postDownlaodProgressNotification:@"1"];
-        [self.tasks removeObject:task];
-        [self.tasksInfo removeObjectForKey:task];
-        
-        //
-        //[self beginDownloadWithUrl:@"http://d1.music.126.net/dmusic/NeteaseMusic_2.0.0_730_web.dmg"];
-    }
-}
+//- (void)URLSession:(NSURLSession *)session
+//              task:(NSURLSessionTask *)task
+//didCompleteWithError:(NSError *)error {
+//
+//    if (error) {
+//        // check if resume data are available
+//        if ([error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData]) {
+//            NSData *resumeData = [error.userInfo objectForKey:NSURLSessionDownloadTaskResumeData];
+//            //通过之前保存的resumeData，获取断点的NSURLSessionTask，调用resume恢复下载
+//            //self.resumeData = resumeData;
+//            if(resumeData)
+//                [self.tasksInfo setObject:resumeData forKey:task];
+//        }
+//        else
+//        {
+//            [self.tasks removeObject:task];
+//            [self.tasksInfo removeObjectForKey:task];
+//        }
+//    } else {
+//        [self sendLocalNotification];
+//        [self postDownlaodProgressNotification:@"1"];
+//        [self.tasks removeObject:task];
+//        [self.tasksInfo removeObjectForKey:task];
+//
+//        //
+//        //[self beginDownloadWithUrl:@"http://d1.music.126.net/dmusic/NeteaseMusic_2.0.0_730_web.dmg"];
+//    }
+//}
 
 - (void)postDownlaodProgressNotification:(NSString *)strProgress {
     NSDictionary *userInfo = @{@"progress":strProgress};
